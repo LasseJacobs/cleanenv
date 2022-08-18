@@ -3,13 +3,15 @@ Package cleanenv gives you a single tool to read application configuration from 
 
 Features
 
-- read from several file formats (YAML, JSON, TOML, ENV, EDN) and parse into the internal structure;
+- read from several file formats (YAML, JSON) and parse into the internal structure;
 
 - read environment variables into the internal structure;
 
 - output environment variable list with descriptions into help output;
 
 - custom variable readers (e.g. if you want to read from remote config server, etc).
+
+- Prefix for environment variables (useful when there are more processes running to avoid name clashes)
 
 Usage
 
@@ -22,7 +24,7 @@ You can just prepare the config structure and fill it from the config file and e
 
 	var cfg Config
 
-	ReadConfig("config.yml", &cfg)
+	ReadConfig("config.yml", "APPNAME", &cfg)
 
 Help output
 
@@ -35,7 +37,7 @@ You can list all of your environment variables by means of help output:
 
 	var cfg ConfigRemote
 
-	help, err := cleanenv.GetDescription(&cfg, nil)
+	help, err := cleanenv.GetDescription(&cfg, "APPNAME", nil)
 	if err != nil {
 		...
 	}
@@ -45,7 +47,7 @@ You can list all of your environment variables by means of help output:
 	fu := f.Usage
 	f.Usage = func() {
 		fu()
-		envHelp, _ := cleanenv.GetDescription(&cfg, nil)
+		envHelp, _ := cleanenv.GetDescription(&cfg, "APPNAME", nil)
 		fmt.Fprintln(f.Output())
 		fmt.Fprintln(f.Output(), envHelp)
 	}

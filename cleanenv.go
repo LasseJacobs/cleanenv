@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"gopkg.in/yaml.v3"
 	"io"
 	"math"
 	"os"
@@ -12,11 +13,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/BurntSushi/toml"
-	"github.com/joho/godotenv"
-	"gopkg.in/yaml.v3"
-	"olympos.io/encoding/edn"
 )
 
 const (
@@ -26,21 +22,21 @@ const (
 
 // Supported tags
 const (
-	// Name of the environment variable or a list of names
+	// TagEnv Name of the environment variable or a list of names
 	TagEnv = "env"
-	// Value parsing layout (for types like time.Time)
+	// TagEnvLayout Value parsing layout (for types like time.Time)
 	TagEnvLayout = "env-layout"
-	// Default value
+	// TagEnvDefault Default value
 	TagEnvDefault = "env-default"
-	// Custom list and map separator
+	// TagEnvSeparator Custom list and map separator
 	TagEnvSeparator = "env-separator"
-	// Environment variable description
+	// TagEnvDescription Environment variable description
 	TagEnvDescription = "env-description"
-	// Flag to mark a field as updatable
+	// TagEnvUpd Flag to mark a field as updatable
 	TagEnvUpd = "env-upd"
-	// Flag to mark a field as required
+	// TagEnvRequired Flag to mark a field as required
 	TagEnvRequired = "env-required"
-	// Flag to specify prefix for structure fields
+	// TagEnvPrefix Flag to specify prefix for structure fields
 	TagEnvPrefix = "env-prefix"
 )
 
@@ -81,27 +77,29 @@ type Updater interface {
 //
 //	 var cfg ConfigDatabase
 //
-//	 err := cleanenv.ReadConfig("config.yml", &cfg)
+//	 err := cleanenv.ReadConfig("config.yml", "PREFIX", &cfg)
 //	 if err != nil {
 //	     ...
 //	 }
-func ReadConfig(path string, cfg interface{}) error {
-	err := parseFile(path, cfg)
-	if err != nil {
-		return err
+func ReadConfig(path string, appname string, cfg interface{}) error {
+	if path != "" {
+		err := parseFile(path, cfg)
+		if err != nil {
+			return err
+		}
 	}
 
-	return readEnvVars(cfg, false)
+	return readEnvVars(cfg, toPrefix(appname), false)
 }
 
 // ReadEnv reads environment variables into the structure.
-func ReadEnv(cfg interface{}) error {
-	return readEnvVars(cfg, false)
+func ReadEnv(cfg interface{}, appname string) error {
+	return readEnvVars(cfg, toPrefix(appname), false)
 }
 
 // UpdateEnv rereads (updates) environment variables in the structure.
-func UpdateEnv(cfg interface{}) error {
-	return readEnvVars(cfg, true)
+func UpdateEnv(cfg interface{}, appname string) error {
+	return readEnvVars(cfg, toPrefix(appname), true)
 }
 
 // parseFile parses configuration file according to it's extension
@@ -111,12 +109,6 @@ func UpdateEnv(cfg interface{}) error {
 // - yaml
 //
 // - json
-//
-// - toml
-//
-// - env
-//
-// - edn
 func parseFile(path string, cfg interface{}) error {
 	// open the configuration file
 	f, err := os.OpenFile(path, os.O_RDONLY|os.O_SYNC, 0)
@@ -131,12 +123,6 @@ func parseFile(path string, cfg interface{}) error {
 		err = parseYAML(f, cfg)
 	case ".json":
 		err = parseJSON(f, cfg)
-	case ".toml":
-		err = parseTOML(f, cfg)
-	case ".edn":
-		err = parseEDN(f, cfg)
-	case ".env":
-		err = parseENV(f, cfg)
 	default:
 		return fmt.Errorf("file format '%s' doesn't supported by the parser", ext)
 	}
@@ -154,32 +140,6 @@ func parseYAML(r io.Reader, str interface{}) error {
 // parseJSON parses JSON from reader to data structure
 func parseJSON(r io.Reader, str interface{}) error {
 	return json.NewDecoder(r).Decode(str)
-}
-
-// parseTOML parses TOML from reader to data structure
-func parseTOML(r io.Reader, str interface{}) error {
-	_, err := toml.DecodeReader(r, str)
-	return err
-}
-
-// parseEDN parses EDN from reader to data structure
-func parseEDN(r io.Reader, str interface{}) error {
-	return edn.NewDecoder(r).Decode(str)
-}
-
-// parseENV, in fact, doesn't fill the structure with environment variable values.
-// It just parses ENV file and sets all variables to the environment.
-// Thus, the structure should be filled at the next steps.
-func parseENV(r io.Reader, _ interface{}) error {
-	vars, err := godotenv.Parse(r)
-	if err != nil {
-		return err
-	}
-
-	for env, val := range vars {
-		os.Setenv(env, val)
-	}
-	return nil
 }
 
 // structMeta is a structure metadata entity
@@ -201,13 +161,13 @@ func (sm *structMeta) isFieldValueZero() bool {
 }
 
 // readStructMetadata reads structure metadata (types, tags, etc.)
-func readStructMetadata(cfgRoot interface{}) ([]structMeta, error) {
+func readStructMetadata(cfgRoot interface{}, rootPrefix string) ([]structMeta, error) {
 	type cfgNode struct {
 		Val    interface{}
 		Prefix string
 	}
 
-	cfgStack := []cfgNode{{cfgRoot, ""}}
+	cfgStack := []cfgNode{{cfgRoot, rootPrefix}}
 	metas := make([]structMeta, 0)
 
 	for i := 0; i < len(cfgStack); i++ {
@@ -299,8 +259,8 @@ func readStructMetadata(cfgRoot interface{}) ([]structMeta, error) {
 }
 
 // readEnvVars reads environment variables to the provided configuration structure
-func readEnvVars(cfg interface{}, update bool) error {
-	metaInfo, err := readStructMetadata(cfg)
+func readEnvVars(cfg interface{}, prefix string, update bool) error {
+	metaInfo, err := readStructMetadata(cfg, prefix)
 	if err != nil {
 		return err
 	}
@@ -499,8 +459,8 @@ func parseMap(valueType reflect.Type, value string, sep string, layout *string) 
 
 // GetDescription returns a description of environment variables.
 // You can provide a custom header text.
-func GetDescription(cfg interface{}, headerText *string) (string, error) {
-	meta, err := readStructMetadata(cfg)
+func GetDescription(cfg interface{}, prefix string, headerText *string) (string, error) {
+	meta, err := readStructMetadata(cfg, prefix)
 	if err != nil {
 		return "", err
 	}
@@ -541,13 +501,13 @@ func GetDescription(cfg interface{}, headerText *string) (string, error) {
 // Usage returns a configuration usage help.
 // Other usage instructions can be wrapped in and executed before this usage function.
 // The default output is STDERR.
-func Usage(cfg interface{}, headerText *string, usageFuncs ...func()) func() {
-	return FUsage(os.Stderr, cfg, headerText, usageFuncs...)
+func Usage(cfg interface{}, appName string, headerText *string, usageFuncs ...func()) func() {
+	return FUsage(os.Stderr, cfg, appName, headerText, usageFuncs...)
 }
 
 // FUsage prints configuration help into the custom output.
 // Other usage instructions can be wrapped in and executed before this usage function
-func FUsage(w io.Writer, cfg interface{}, headerText *string, usageFuncs ...func()) func() {
+func FUsage(w io.Writer, cfg interface{}, appName string, headerText *string, usageFuncs ...func()) func() {
 	return func() {
 		for _, fn := range usageFuncs {
 			fn()
@@ -555,7 +515,7 @@ func FUsage(w io.Writer, cfg interface{}, headerText *string, usageFuncs ...func
 
 		_ = flag.Usage
 
-		text, err := GetDescription(cfg, headerText)
+		text, err := GetDescription(cfg, toPrefix(appName), headerText)
 		if err != nil {
 			return
 		}
@@ -603,4 +563,11 @@ func isZero(v reflect.Value) bool {
 		// later, as a default value doesn't makes sense here.
 		panic(fmt.Sprintf("Value.IsZero: %v", v.Kind()))
 	}
+}
+
+func toPrefix(name string) string {
+	if name == "" {
+		return name
+	}
+	return name + "_"
 }

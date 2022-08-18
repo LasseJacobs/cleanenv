@@ -1,18 +1,11 @@
-![Clean Env](logo.svg)
-
 # Clean Env
 
 Minimalistic configuration reader
 
-[![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go) 
-[![GoDoc](https://godoc.org/github.com/ilyakaznacheev/cleanenv?status.svg)](https://godoc.org/github.com/ilyakaznacheev/cleanenv)
-[![Go Report Card](https://goreportcard.com/badge/github.com/ilyakaznacheev/cleanenv)](https://goreportcard.com/report/github.com/ilyakaznacheev/cleanenv)
-[![Coverage Status](https://codecov.io/github/ilyakaznacheev/cleanenv/coverage.svg?branch=master)](https://codecov.io/gh/ilyakaznacheev/cleanenv)
-[![Build Status](https://travis-ci.org/ilyakaznacheev/cleanenv.svg?branch=master)](https://travis-ci.org/ilyakaznacheev/cleanenv)
-[![Release](https://img.shields.io/github/release/ilyakaznacheev/cleanenv.svg)](https://github.com/ilyakaznacheev/cleanenv/releases/)
-[![License](https://img.shields.io/github/license/ilyakaznacheev/cleanenv.svg)](https://github.com/ilyakaznacheev/cleanenv/blob/master/LICENSE)
 
 ## Overview
+
+This is a fork of ilyakaznacheev's cleanenv package. The reason I forked it is that I was looking for slightly different behavior. I only need YAML support and thus I also removed other dependencies.
 
 This is a simple configuration reading tool. It just does the following:
 
@@ -45,7 +38,7 @@ This is a simple configuration reading tool. It just does the following:
 To install the package run
 
 ```bash
-go get -u github.com/ilyakaznacheev/cleanenv
+go get -u github.com/LasseJacobs/cleanenv
 ```
 
 ## Usage
@@ -65,7 +58,7 @@ There are just several actions you can do with this tool and probably only thing
 You can read a configuration file and environment variables in a single function call.
 
 ```go
-import github.com/ilyakaznacheev/cleanenv
+import github.com/LasseJacobs/cleanenv
 
 type ConfigDatabase struct {
     Port     string `yaml:"port" env:"PORT" env-default:"5432"`
@@ -77,7 +70,7 @@ type ConfigDatabase struct {
 
 var cfg ConfigDatabase
 
-err := cleanenv.ReadConfig("config.yml", &cfg)
+err := cleanenv.ReadConfig("config.yml", "APPNAME", &cfg)
 if err != nil {
     ...
 }
@@ -86,15 +79,15 @@ if err != nil {
 This will do the following:
 
 1. parse configuration file according to YAML format (`yaml` tag in this case);
-1. reads environment variables and overwrites values from the file with the values which was found in the environment (`env` tag);
+1. reads environment variables and overwrites values from the file with the values which was found in the environment (`env` tag), environment variables will be prefixed with 'appname', pass "" if no prefix is preferred;
 1. if no value was found on the first two steps, the field will be filled with the default value (`env-default` tag) if it is set.
 
 ### Read Environment Variables Only
 
-Sometimes you don't want to use configuration files at all, or you may want to use `.env` file format instead. Thus, you can limit yourself with only reading environment variables:
+Sometimes you don't want to use configuration files at all. Thus, you can limit yourself with only reading environment variables:
 
 ```go 
-import github.com/ilyakaznacheev/cleanenv
+import github.com/LasseJacobs/cleanenv
 
 type ConfigDatabase struct {
     Port     string `env:"PORT" env-default:"5432"`
@@ -106,7 +99,7 @@ type ConfigDatabase struct {
 
 var cfg ConfigDatabase
 
-err := cleanenv.ReadEnv(&cfg)
+err := cleanenv.ReadEnv(&cfg, "")
 if err != nil {
     ...
 }
@@ -117,7 +110,7 @@ if err != nil {
 Some environment variables may change during the application run. To get the new values you need to mark these variables as updatable with the tag `env-upd` and then run the update function:
 
 ```go
-import github.com/ilyakaznacheev/cleanenv
+import github.com/LasseJacobs/cleanenv
 
 type ConfigRemote struct {
     Port     string `env:"PORT" env-upd`
@@ -127,11 +120,11 @@ type ConfigRemote struct {
 
 var cfg ConfigRemote
 
-cleanenv.ReadEnv(&cfg)
+cleanenv.ReadEnv(&cfg, "APPNAME")
 
 // ... some actions in-between
 
-err := cleanenv.UpdateEnv(&cfg)
+err := cleanenv.UpdateEnv(&cfg, "APPNAME")
 if err != nil {
     ...
 }
@@ -144,7 +137,7 @@ Here remote host and port may change in a distributed system architecture. Field
 You can get descriptions of all environment variables to use them in the help documentation.
 
 ```go
-import github.com/ilyakaznacheev/cleanenv
+import github.com/LasseJacobs/cleanenv
 
 type ConfigServer struct {
     Port     string `env:"PORT" env-description:"server port"`
@@ -153,7 +146,7 @@ type ConfigServer struct {
 
 var cfg ConfigRemote
 
-help, err := cleanenv.GetDescription(&cfg, nil)
+help, err := cleanenv.GetDescription(&cfg, "APPNAME", nil)
 if err != nil {
     ...
 }
@@ -241,13 +234,10 @@ func (c *Config) Update() error {
 
 ## Supported File Formats
 
-There are several most popular config file formats supported:
+There are several most popular config file formats supported (the original package supports more formats):
 
 - YAML
 - JSON
-- TOML
-- ENV
-- EDN
 
 ## Integration
 
@@ -280,7 +270,7 @@ type Config struct {
 
 var cfg Config
 
-err := ReadConfig("config.yml", &cfg)
+err := ReadConfig("config.yml", "APPNAME", &cfg)
 if err != nil {
     ...
 }
@@ -300,10 +290,5 @@ Any contribution is welcome.
 
 ## Thanks
 
-Big thanks to a project [kelseyhightower/envconfig](https://github.com/kelseyhightower/envconfig) for inspiration.
+All credit for this package goes to @ilyakaznacheev
 
-The logo was made by [alexchoffy](https://www.instagram.com/alexchoffy/).
-
-## Blog Posts
-
-[Clean Configuration Management in Golang](https://dev.to/ilyakaznacheev/clean-configuration-management-in-golang-1c89).

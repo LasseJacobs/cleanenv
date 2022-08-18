@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/ilyakaznacheev/cleanenv"
+	"github.com/LasseJacobs/cleanenv"
 )
 
 // Config is a application configuration structure
@@ -50,7 +50,7 @@ func main() {
 	args := ProcessArgs(&cfg)
 
 	// read configuration from the file and environment variables
-	if err := cleanenv.ReadConfig(args.ConfigPath, &cfg); err != nil {
+	if err := cleanenv.ReadConfig(args.ConfigPath, "", &cfg); err != nil {
 		fmt.Println(err)
 		os.Exit(2)
 	}
@@ -76,7 +76,7 @@ func ProcessArgs(cfg interface{}) Args {
 	fu := f.Usage
 	f.Usage = func() {
 		fu()
-		envHelp, _ := cleanenv.GetDescription(cfg, nil)
+		envHelp, _ := cleanenv.GetDescription(cfg, "", nil)
 		fmt.Fprintln(f.Output())
 		fmt.Fprintln(f.Output(), envHelp)
 	}

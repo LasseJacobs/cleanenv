@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/ilyakaznacheev/cleanenv"
+	"github.com/LasseJacobs/cleanenv"
 )
 
 type config struct {
@@ -44,7 +44,7 @@ func ParseConfigFiles(files ...string) (*config, error) {
 	var cfg config
 
 	for i := 0; i < len(files); i++ {
-		err := cleanenv.ReadConfig(files[i], &cfg)
+		err := cleanenv.ReadConfig(files[i], "", &cfg)
 		if err != nil {
 			log.Printf("Error reading configuration from file:%v", files[i])
 			return nil, err

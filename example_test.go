@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ilyakaznacheev/cleanenv"
+	"github.com/LasseJacobs/cleanenv"
 )
 
 // ExampleGetDescription builds a description text from structure tags
@@ -18,7 +18,7 @@ func ExampleGetDescription() {
 
 	var cfg config
 
-	text, err := cleanenv.GetDescription(&cfg, nil)
+	text, err := cleanenv.GetDescription(&cfg, "", nil)
 	if err != nil {
 		panic(err)
 	}
@@ -43,7 +43,7 @@ func ExampleGetDescription_defaults() {
 
 	var cfg config
 
-	text, err := cleanenv.GetDescription(&cfg, nil)
+	text, err := cleanenv.GetDescription(&cfg, "", nil)
 	if err != nil {
 		panic(err)
 	}
@@ -66,7 +66,7 @@ func ExampleGetDescription_variableList() {
 
 	var cfg config
 
-	text, err := cleanenv.GetDescription(&cfg, nil)
+	text, err := cleanenv.GetDescription(&cfg, "", nil)
 	if err != nil {
 		panic(err)
 	}
@@ -93,7 +93,7 @@ func ExampleGetDescription_customHeaderText() {
 
 	header := "Custom header text:"
 
-	text, err := cleanenv.GetDescription(&cfg, &header)
+	text, err := cleanenv.GetDescription(&cfg, "", &header)
 	if err != nil {
 		panic(err)
 	}
@@ -123,7 +123,7 @@ func ExampleUpdateEnv() {
 	os.Setenv("TWO", "2")
 
 	// read environment variables into the structure
-	cleanenv.ReadEnv(&cfg)
+	cleanenv.ReadEnv(&cfg, "")
 	fmt.Printf("%+v\n", cfg)
 
 	// update environment variables
@@ -131,7 +131,7 @@ func ExampleUpdateEnv() {
 	os.Setenv("TWO", "22")
 
 	// update only updatable environment variables in the structure
-	cleanenv.UpdateEnv(&cfg)
+	cleanenv.UpdateEnv(&cfg, "")
 	fmt.Printf("%+v\n", cfg)
 
 	//Output: {One:1 Two:2}
@@ -156,7 +156,7 @@ func ExampleReadEnv() {
 	os.Setenv("USER", "tester")
 	os.Setenv("PASSWORD", "*****")
 
-	cleanenv.ReadEnv(&cfg)
+	cleanenv.ReadEnv(&cfg, "")
 	fmt.Printf("%+v\n", cfg)
 
 	//Output: {Port:5050 Host:localhost Name:redis User:tester Password:*****}
@@ -190,7 +190,7 @@ func Example_setter() {
 	os.Setenv("ONE", "test1")
 	os.Setenv("TWO", "test2")
 
-	cleanenv.ReadEnv(&cfg)
+	cleanenv.ReadEnv(&cfg, "")
 	fmt.Printf("%+v\n", cfg)
 	//Output: {Default:test1 Custom:my field is: test2}
 }
@@ -212,7 +212,7 @@ func Example_updater() {
 
 	os.Setenv("DEFAULT", "default")
 
-	cleanenv.ReadEnv(&cfg)
+	cleanenv.ReadEnv(&cfg, "")
 	fmt.Printf("%+v\n", cfg)
 	//Output: {Default:default Custom:custom}
 }
@@ -236,7 +236,7 @@ func ExampleUsage() {
 	customHeader := "My sweet variables:"
 
 	// get config usage with wrapped flag usage and custom header string
-	u := cleanenv.Usage(&cfg, &customHeader, fset.Usage)
+	u := cleanenv.Usage(&cfg, "", &customHeader, fset.Usage)
 
 	// print usage to STDERR
 	u()

@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ilyakaznacheev/cleanenv"
+	"github.com/LasseJacobs/cleanenv"
 )
 
 type config struct {
@@ -24,7 +24,7 @@ func main() {
 	}
 
 	var cfg config
-	err = cleanenv.ReadEnv(&cfg)
+	err = cleanenv.ReadEnv(&cfg, "")
 	if err != nil {
 		panic(err)
 	}
