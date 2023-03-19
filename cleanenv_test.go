@@ -2,7 +2,6 @@ package cleanenv
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -10,15 +9,6 @@ import (
 	"testing"
 	"time"
 )
-
-type testUpdater struct {
-	Data string `env:"DATA"`
-	err  error
-}
-
-func (t *testUpdater) Update() error {
-	return t.err
-}
 
 func TestReadEnvVars(t *testing.T) {
 	durationFunc := func(s string) time.Duration {
@@ -35,10 +25,6 @@ func TestReadEnvVars(t *testing.T) {
 			t.Fatal(err)
 		}
 		return tm
-	}
-
-	ta := &testUpdater{
-		err: errors.New("test"),
 	}
 
 	type Combined struct {
@@ -285,13 +271,6 @@ func TestReadEnvVars(t *testing.T) {
 		},
 
 		{
-			name:    "updater error",
-			cfg:     ta,
-			want:    ta,
-			wantErr: true,
-		},
-
-		{
 			name:    "required error",
 			cfg:     &Required{},
 			want:    &Required{},
@@ -306,7 +285,7 @@ func TestReadEnvVars(t *testing.T) {
 			}
 			defer os.Clearenv()
 
-			if err := readEnvVars(tt.cfg, "", false); (err != nil) != tt.wantErr {
+			if err := ReadEnv(tt.cfg, ""); (err != nil) != tt.wantErr {
 				t.Errorf("wrong error behavior %v, wantErr %v", err, tt.wantErr)
 			}
 			if !reflect.DeepEqual(tt.cfg, tt.want) {
@@ -356,7 +335,7 @@ func TestReadEnvVarsTime(t *testing.T) {
 			}
 			defer os.Clearenv()
 
-			if err := readEnvVars(tt.cfg, "", false); (err != nil) != tt.wantErr {
+			if err := ReadEnv(tt.cfg, ""); (err != nil) != tt.wantErr {
 				t.Errorf("wrong error behavior %v, wantErr %v", err, tt.wantErr)
 			}
 			if !reflect.DeepEqual(tt.cfg, tt.want) {
@@ -399,7 +378,7 @@ func TestReadEnvVarsWithPrefix(t *testing.T) {
 	}
 
 	var cfg Config
-	if err := readEnvVars(&cfg, "", false); err != nil {
+	if err := ReadEnv(&cfg, ""); err != nil {
 		t.Fatal("failed to read env vars", err)
 	}
 
@@ -445,7 +424,7 @@ func TestReadEnvVarsWithGlobalPrefix(t *testing.T) {
 	}
 
 	var cfg Config
-	if err := readEnvVars(&cfg, "PREFIX_", false); err != nil {
+	if err := ReadEnv(&cfg, "PREFIX_"); err != nil {
 		t.Fatal("failed to read env vars", err)
 	}
 
@@ -478,57 +457,6 @@ type testConfigUpdateNoFunction struct {
 	One   string
 	Two   string
 	Three string
-}
-
-func TestReadUpdateFunctions(t *testing.T) {
-
-	tests := []struct {
-		name    string
-		cfg     interface{}
-		want    interface{}
-		wantErr bool
-	}{
-		{
-			name: "update structure with function",
-			cfg: &testConfigUpdateFunction{
-				One:   "test1",
-				Two:   "test2",
-				Three: "test3",
-			},
-			want: &testConfigUpdateFunction{
-				One:   "upd1:test1",
-				Two:   "upd2:test2",
-				Three: "upd3:test3",
-			},
-			wantErr: false,
-		},
-
-		{
-			name: "no update",
-			cfg: &testConfigUpdateNoFunction{
-				One:   "test1",
-				Two:   "test2",
-				Three: "test3",
-			},
-			want: &testConfigUpdateNoFunction{
-				One:   "test1",
-				Two:   "test2",
-				Three: "test3",
-			},
-			wantErr: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := readEnvVars(tt.cfg, "", false); (err != nil) != tt.wantErr {
-				t.Errorf("wrong error behavior %v, wantErr %v", err, tt.wantErr)
-			}
-			if !reflect.DeepEqual(tt.cfg, tt.want) {
-				t.Errorf("wrong data %v, want %v", tt.cfg, tt.want)
-			}
-		})
-	}
 }
 
 func TestParseFile(t *testing.T) {
@@ -763,7 +691,7 @@ func TestGetDescription(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetDescription(tt.cfg, "", tt.header)
+			got, err := GetDescription(tt.cfg, tt.header)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("wrong error behavior %v, wantErr %v", err, tt.wantErr)
 				return
@@ -852,7 +780,7 @@ func TestFUsage(t *testing.T) {
 				}(text))
 			}
 			var cfg testSingleEnv
-			FUsage(w, &cfg, "", tt.headerText, uFuncs...)()
+			FUsage(w, &cfg, tt.headerText, uFuncs...)()
 			gotRaw, _ := ioutil.ReadAll(w)
 			got := string(gotRaw)
 

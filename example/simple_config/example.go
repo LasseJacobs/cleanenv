@@ -21,7 +21,7 @@ type Config struct {
 		Connections int    `yaml:"connections" env:"DB_CONNECTIONS" env-description:"Total number of database connections"`
 	} `yaml:"database"`
 	Server struct {
-		Host string `yaml:"host" env:"SRV_HOST,HOST" env-description:"Server host" env-default:"localhost"`
+		Host string `yaml:"host" env:"SRV_HOST,HOST" env-description:"Server host" env-default:"localhost" default:""`
 		Port string `yaml:"port" env:"SRV_PORT,PORT" env-description:"Server port" env-default:"8080"`
 	} `yaml:"server"`
 	Greeting string `env:"GREETING" env-description:"Greeting phrase" env-default:"Hello!"`
@@ -47,10 +47,10 @@ func ConnectDB(host, port, user, password, name string, conn int) (*sql.DB, erro
 func main() {
 	var cfg Config
 
-	args := ProcessArgs(&cfg)
+	//args := ProcessArgs(&cfg)
 
 	// read configuration from the file and environment variables
-	if err := cleanenv.ReadConfig(args.ConfigPath, "", &cfg); err != nil {
+	if err := cleanenv.ReadConfig("", "", &cfg); err != nil {
 		fmt.Println(err)
 		os.Exit(2)
 	}
@@ -76,7 +76,7 @@ func ProcessArgs(cfg interface{}) Args {
 	fu := f.Usage
 	f.Usage = func() {
 		fu()
-		envHelp, _ := cleanenv.GetDescription(cfg, "", nil)
+		envHelp, _ := cleanenv.GetDescription(cfg, nil)
 		fmt.Fprintln(f.Output())
 		fmt.Fprintln(f.Output(), envHelp)
 	}

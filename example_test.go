@@ -18,7 +18,7 @@ func ExampleGetDescription() {
 
 	var cfg config
 
-	text, err := cleanenv.GetDescription(&cfg, "", nil)
+	text, err := cleanenv.GetDescription(&cfg, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -43,7 +43,7 @@ func ExampleGetDescription_defaults() {
 
 	var cfg config
 
-	text, err := cleanenv.GetDescription(&cfg, "", nil)
+	text, err := cleanenv.GetDescription(&cfg, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -66,7 +66,7 @@ func ExampleGetDescription_variableList() {
 
 	var cfg config
 
-	text, err := cleanenv.GetDescription(&cfg, "", nil)
+	text, err := cleanenv.GetDescription(&cfg, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -93,7 +93,7 @@ func ExampleGetDescription_customHeaderText() {
 
 	header := "Custom header text:"
 
-	text, err := cleanenv.GetDescription(&cfg, "", &header)
+	text, err := cleanenv.GetDescription(&cfg, &header)
 	if err != nil {
 		panic(err)
 	}
@@ -106,37 +106,6 @@ func ExampleGetDescription_customHeaderText() {
 	//     	second parameter
 	//   THREE string
 	//     	third parameter
-}
-
-// ExampleUpdateEnv updates variables in the configuration structure.
-// Only variables with `env-upd:""` tag will be updated
-func ExampleUpdateEnv() {
-	type config struct {
-		One int64 `env:"ONE"`
-		Two int64 `env:"TWO" env-upd:""`
-	}
-
-	var cfg config
-
-	// set environment variables
-	os.Setenv("ONE", "1")
-	os.Setenv("TWO", "2")
-
-	// read environment variables into the structure
-	cleanenv.ReadEnv(&cfg, "")
-	fmt.Printf("%+v\n", cfg)
-
-	// update environment variables
-	os.Setenv("ONE", "11")
-	os.Setenv("TWO", "22")
-
-	// update only updatable environment variables in the structure
-	cleanenv.UpdateEnv(&cfg, "")
-	fmt.Printf("%+v\n", cfg)
-
-	//Output: {One:1 Two:2}
-	// {One:1 Two:22}
-
 }
 
 // ExampleReadEnv reads environment variables or default values into the structure
@@ -195,28 +164,6 @@ func Example_setter() {
 	//Output: {Default:test1 Custom:my field is: test2}
 }
 
-// ConfigUpdate is a type with a custom updater
-type ConfigUpdate struct {
-	Default string `env:"DEFAULT"`
-	Custom  string
-}
-
-func (c *ConfigUpdate) Update() error {
-	c.Custom = "custom"
-	return nil
-}
-
-// Example_updater uses a type with a custom updater
-func Example_updater() {
-	var cfg ConfigUpdate
-
-	os.Setenv("DEFAULT", "default")
-
-	cleanenv.ReadEnv(&cfg, "")
-	fmt.Printf("%+v\n", cfg)
-	//Output: {Default:default Custom:custom}
-}
-
 func ExampleUsage() {
 	os.Stderr = os.Stdout //replace STDERR with STDOUT for test
 
@@ -236,7 +183,7 @@ func ExampleUsage() {
 	customHeader := "My sweet variables:"
 
 	// get config usage with wrapped flag usage and custom header string
-	u := cleanenv.Usage(&cfg, "", &customHeader, fset.Usage)
+	u := cleanenv.Usage(&cfg, &customHeader, fset.Usage)
 
 	// print usage to STDERR
 	u()
