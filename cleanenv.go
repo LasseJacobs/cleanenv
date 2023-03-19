@@ -106,6 +106,11 @@ func ReadEnv(cfg interface{}, appname string) error {
 		return err
 	}
 
+	err = readFlagVars(meta)
+	if err != nil {
+		return err
+	}
+
 	return finalize(meta)
 }
 

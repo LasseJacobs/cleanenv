@@ -2,6 +2,7 @@ package cleanenv
 
 import (
 	"flag"
+	"os"
 	"strings"
 )
 
@@ -24,7 +25,10 @@ func readFlagVars(metaInfo []structMeta) error {
 		names[flagName] = struct{}{}
 		values[meta.fieldName] = flagSet.String(flagName, "", meta.description)
 	}
-	flag.Parse()
+	err := flagSet.Parse(os.Args)
+	if err != nil {
+		return err
+	}
 	for _, meta := range metaInfo {
 		flagVal := *values[meta.fieldName]
 		if flagVal == "" {
