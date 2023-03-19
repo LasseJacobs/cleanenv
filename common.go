@@ -18,7 +18,6 @@ type structMeta struct {
 	layout      *string
 	separator   string
 	description string
-	updatable   bool
 	required    bool
 }
 
@@ -92,8 +91,6 @@ func readStructMetadata(cfgRoot interface{}) ([]structMeta, error) {
 				separator = DefaultSeparator
 			}
 
-			_, upd := fType.Tag.Lookup(TagEnvUpd)
-
 			_, required := fType.Tag.Lookup(TagEnvRequired)
 
 			envList := make([]string, 0)
@@ -115,7 +112,6 @@ func readStructMetadata(cfgRoot interface{}) ([]structMeta, error) {
 				layout:      layout,
 				separator:   separator,
 				description: fType.Tag.Get(TagEnvDescription),
-				updatable:   upd,
 				required:    required,
 			})
 		}

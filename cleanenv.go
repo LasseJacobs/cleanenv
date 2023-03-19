@@ -24,8 +24,6 @@ const (
 	TagEnvSeparator = "env-separator"
 	// TagEnvDescription Environment variable description
 	TagEnvDescription = "env-description"
-	// TagEnvUpd Flag to mark a field as updatable
-	TagEnvUpd = "env-upd"
 	// TagEnvRequired Flag to mark a field as required
 	TagEnvRequired = "env-required"
 	// TagEnvPrefix Flag to specify prefix for structure fields
